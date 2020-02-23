@@ -122,7 +122,12 @@ namespace PuppeteerSharp
         {
             if (_buffer == null)
             {
-                await BodyLoadedTaskWrapper.Task.ConfigureAwait(false);
+                var success = await BodyLoadedTaskWrapper.Task.ConfigureAwait(false);
+
+                if (!success)
+                {
+                    throw new PuppeteerException("Response body is unavailable for redirect responses");
+                }
 
                 try
                 {

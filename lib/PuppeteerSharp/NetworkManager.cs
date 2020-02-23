@@ -342,8 +342,7 @@ namespace PuppeteerSharp
 
             request.Response = response;
             request.RedirectChainList.Add(request);
-            response.BodyLoadedTaskWrapper.TrySetException(
-                new PuppeteerException("Response body is unavailable for redirect responses"));
+            response.BodyLoadedTaskWrapper.TrySetResult(false);
 
             if (request.RequestId != null)
             {

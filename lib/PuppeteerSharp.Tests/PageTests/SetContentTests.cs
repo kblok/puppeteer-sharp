@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
@@ -127,6 +128,50 @@ namespace PuppeteerSharp.Tests.PageTests
         {
             await Page.SetContentAsync("<div>\n</div>");
             Assert.Equal("\n", await Page.QuerySelectorAsync("div").EvaluateFunctionAsync<string>("div => div.textContent"));
+        }
+
+        [Fact]
+        public async Task ShouldWorkWithoutThrowingUnhandledTaskExceptions()
+        {
+            // Using this technique to test finalizers:
+            // https://www.inversionofcontrol.co.uk/unit-testing-finalizers-in-csharp/
+
+            TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
+
+            WeakReference<Page> weak = null;
+
+            Func<Task> func = async () =>
+            {
+                var page = await Browser.NewPageAsync();
+                await page.SetContentAsync("<html></html>");
+                await page.CloseAsync();
+
+                weak = new WeakReference<Page>(page, true);
+            };
+
+            await func();
+            GC.Collect(0, GCCollectionMode.Forced);
+            GC.WaitForPendingFinalizers();
+
+            Assert.Empty(exceptions);
+
+            TaskScheduler.UnobservedTaskException -= TaskScheduler_UnobservedTaskException;
+        }
+
+        private static List<TargetClosedException> exceptions = new List<TargetClosedException>();
+
+        private void TaskScheduler_UnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs args)
+        {
+            args.Exception.Handle(ex =>
+            {
+                if (ex is TargetClosedException exception)
+                {
+                    exceptions.Add(exception);
+                    return true;
+                }
+
+                return false;
+            });
         }
     }
 }
