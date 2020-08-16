@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using PuppeteerSharp.Helpers;
@@ -109,10 +110,10 @@ namespace PuppeteerSharp
             return UpdateProtocolCacheDisabledAsync();
         }
 
-        internal Task SetRequestInterceptionAsync(bool value)
+        internal Task SetRequestInterceptionAsync(bool value, params FetchEnableRequest.Pattern[] fetchRequestPatterns)
         {
             _userRequestInterceptionEnabled = value;
-            return UpdateProtocolRequestInterceptionAsync();
+            return UpdateProtocolRequestInterceptionAsync(fetchRequestPatterns);
         }
 
         #endregion
@@ -278,8 +279,9 @@ namespace PuppeteerSharp
 
             if (!string.IsNullOrEmpty(requestId))
             {
-                if (_requestIdToRequestWillBeSentEvent.TryRemove(requestId, out var requestWillBeSentEvent))
+                if (_requestIdToRequestWillBeSentEvent.TryRemove(requestId, out RequestWillBeSentPayload requestWillBeSentEvent))
                 {
+                    MergePayloads(requestWillBeSentEvent, e);
                     await OnRequestAsync(requestWillBeSentEvent, interceptionId).ConfigureAwait(false);
                 }
                 else
@@ -289,17 +291,28 @@ namespace PuppeteerSharp
             }
         }
 
+        private void MergePayloads(RequestWillBeSentPayload requestWillBeSentPayload, FetchRequestPausedResponse fetchRequestPausedResponse)
+        {
+            requestWillBeSentPayload.Type = fetchRequestPausedResponse.ResourceType;
+            requestWillBeSentPayload.Response = new ResponsePayload
+            {
+                Status = fetchRequestPausedResponse.ResponseStatusCode,
+                StatusText = fetchRequestPausedResponse.ResponseStatusCode.ToString(),
+                Headers = fetchRequestPausedResponse.ResponseHeadersDictionary
+            };
+        }
+
         private async Task OnRequestAsync(RequestWillBeSentPayload e, string interceptionId)
         {
             Request request;
             var redirectChain = new List<Request>();
-            if (e.RedirectResponse != null)
+            if (e.Response != null)
             {
                 _requestIdToRequest.TryGetValue(e.RequestId, out request);
                 // If we connect late to the target, we could have missed the requestWillBeSent event.
                 if (request != null)
                 {
-                    HandleRequestRedirect(request, e.RedirectResponse);
+                    HandleRequestRedirect(request, e.Response);
                     redirectChain = request.RedirectChainList;
                 }
             }
@@ -369,7 +382,7 @@ namespace PuppeteerSharp
         private async Task OnRequestWillBeSentAsync(RequestWillBeSentPayload e)
         {
             // Request interception doesn't happen for data URLs with Network Service.
-            if (_protocolRequestInterceptionEnabled && !e.Request.Url.StartsWith("data:", StringComparison.InvariantCultureIgnoreCase))
+            if (_protocolRequestInterceptionEnabled && e.IsInterceptable)
             {
                 if (_requestIdToInterceptionId.TryRemove(e.RequestId, out string interceptionId))
                 {
@@ -385,7 +398,7 @@ namespace PuppeteerSharp
             await OnRequestAsync(e, null).ConfigureAwait(false);
         }
 
-        private async Task UpdateProtocolRequestInterceptionAsync()
+        private async Task UpdateProtocolRequestInterceptionAsync(params FetchEnableRequest.Pattern[] fetchRequestPatterns)
         {
             var enabled = _userRequestInterceptionEnabled || _credentials != null;
 
@@ -396,12 +409,17 @@ namespace PuppeteerSharp
             _protocolRequestInterceptionEnabled = enabled;
             if (enabled)
             {
+                if (fetchRequestPatterns == null || !fetchRequestPatterns.Any())
+                {
+                    fetchRequestPatterns = new[] { new FetchEnableRequest.Pattern { UrlPattern = "*" } };
+                }
+
                 await Task.WhenAll(
                     UpdateProtocolCacheDisabledAsync(),
                     _client.SendAsync("Fetch.enable", new FetchEnableRequest
                     {
                         HandleAuthRequests = true,
-                        Patterns = new[] { new FetchEnableRequest.Pattern { UrlPattern = "*" } }
+                        Patterns = fetchRequestPatterns
                     })
                 ).ConfigureAwait(false);
             }

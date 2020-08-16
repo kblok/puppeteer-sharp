@@ -189,7 +189,7 @@ namespace PuppeteerSharp
 
         /// <summary>
         /// Raised when a page issues a request. The <see cref="Request"/> object is read-only.
-        /// In order to intercept and mutate requests, see <see cref="SetRequestInterceptionAsync(bool)"/>
+        /// In order to intercept and mutate requests, see <see cref="SetRequestInterceptionAsync"/>
         /// </summary>
         public event EventHandler<RequestEventArgs> Request;
 
@@ -603,9 +603,17 @@ namespace PuppeteerSharp
         /// <see cref="Request.ContinueAsync(Payload)">request.ContinueAsync</see> and <see cref="Request.RespondAsync(ResponseData)">request.RespondAsync</see> methods.
         /// </summary>
         /// <returns>The request interception task.</returns>
-        /// <param name="value">Whether to enable request interception..</param>
-        public Task SetRequestInterceptionAsync(bool value)
-            => FrameManager.NetworkManager.SetRequestInterceptionAsync(value);
+        /// <param name="value">
+        /// Whether to enable request interception.
+        /// </param>
+        /// <param name="fetchRequestPatterns">
+        /// The patterns/filters for intercepting requests.
+        /// The fetchRequested event will only be raised when the specified patterns are satisfied
+        /// and will be paused until clients response.
+        /// If not set, all requests will be affected.
+        /// </param>
+        public Task SetRequestInterceptionAsync(bool value, params FetchEnableRequest.Pattern[] fetchRequestPatterns)
+            => FrameManager.NetworkManager.SetRequestInterceptionAsync(value, fetchRequestPatterns);
 
         /// <summary>
         /// Set offline mode for the page.

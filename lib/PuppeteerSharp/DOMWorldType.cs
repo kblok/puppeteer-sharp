@@ -7,6 +7,7 @@ namespace PuppeteerSharp
     [JsonConverter(typeof(FlexibleStringEnumConverter), Other)]
     internal enum DOMWorldType
     {
+        Default,
         Other,
         [EnumMember(Value = "isolated")]
         Isolated

@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 using PuppeteerSharp.Helpers;
+using PuppeteerSharp.Messaging;
 
 namespace PuppeteerSharp.Tests.NetworkTests
 {
@@ -583,6 +584,60 @@ namespace PuppeteerSharp.Tests.NetworkTests
             Assert.Equal(2, urls.Count);
             Assert.Contains("one-style.html", urls);
             Assert.Contains("one-style.css", urls);
+        }
+
+
+        [Fact]
+        public async Task ShouldInterceptOnlyUrlPatterns()
+        {
+            await Page.SetRequestInterceptionAsync(true, new FetchEnableRequest.Pattern { UrlPattern = "*.html" });
+            var requests = new List<string>();
+
+            Page.Request += async (sender, e) =>
+            {
+                requests.Add(e.Request.Url);
+                await e.Request.ContinueAsync();
+            };
+
+            await Page.GoToAsync(TestConstants.ServerUrl + "/one-style.html");
+            Assert.Contains("/one-style.html", requests[0]);
+            Assert.Single(requests);
+        }
+
+        [Fact]
+        public async Task ShouldInterceptOnlyResourceTypes()
+        {
+            await Page.SetRequestInterceptionAsync(true, new FetchEnableRequest.Pattern { ResourceType = ResourceType.Document });
+            var requests = new List<string>();
+
+            Page.Request += async (sender, e) =>
+            {
+                requests.Add(e.Request.Url);
+                await e.Request.ContinueAsync();
+            };
+
+            await Page.GoToAsync(TestConstants.ServerUrl + "/one-style.html");
+            Assert.Contains("/one-style.html", requests[0]);
+            Assert.Single(requests);
+        }
+
+        [Fact]
+        public async Task ShouldInterceptAtResponseStage()
+        {
+            await Page.SetRequestInterceptionAsync(true, new FetchEnableRequest.Pattern { RequestStage = RequestFetchStage.Response });
+            var requests = new List<string>();
+
+            Page.Request += async (sender, e) =>
+            {
+                requests.Add(e.Request.Url);
+                Assert.NotEmpty(e.Request.Response.Headers);
+                await e.Request.ContinueAsync();
+            };
+
+            await Page.GoToAsync(TestConstants.ServerUrl + "/one-style.html");
+            Assert.Contains("/one-style.html", requests[0]);
+            Assert.Contains("/one-style.css", requests[1]);
+            Assert.True(requests.Count == 2);
         }
     }
 }
