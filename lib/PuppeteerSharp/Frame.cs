@@ -517,8 +517,8 @@ namespace PuppeteerSharp
         internal void Navigated(FramePayload framePayload)
         {
             Name = framePayload.Name ?? string.Empty;
-            NavigationURL = framePayload.Url;
-            Url = framePayload.Url;
+            NavigationURL = framePayload.Url + framePayload.UrlFragment;
+            Url = framePayload.Url + framePayload.UrlFragment;
         }
 
         internal void NavigatedWithinDocument(string url) => Url = url;

@@ -67,6 +67,13 @@ namespace PuppeteerSharp.Tests.FrameTests
         }
 
         [Fact]
+        public async Task ShouldReturnUrlFragmentAsPartOfUrl()
+        {
+            await Page.GoToAsync(TestConstants.EmptyPage + "#foo");
+            Assert.Equal(TestConstants.EmptyPage + "#foo", Page.Url);
+        }
+
+        [Fact]
         public async Task ShouldPersistMainFrameOnCrossProcessNavigation()
         {
             await Page.GoToAsync(TestConstants.EmptyPage);
