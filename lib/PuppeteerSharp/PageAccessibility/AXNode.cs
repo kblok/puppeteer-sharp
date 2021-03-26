@@ -20,7 +20,6 @@ namespace PuppeteerSharp.PageAccessibility
         private string _role;
         private readonly bool _richlyEditable;
         private readonly bool _editable;
-        private readonly bool _expanded;
         private readonly bool _hidden;
         private bool? _cachedHasFocusableChild;
 
@@ -34,7 +33,6 @@ namespace PuppeteerSharp.PageAccessibility
 
             _richlyEditable = payload.Properties.FirstOrDefault(p => p.Name == "editable")?.Value.Value.ToObject<string>() == "richtext";
             _editable |= _richlyEditable;
-            _expanded = payload.Properties.FirstOrDefault(p => p.Name == "expanded")?.Value.Value.ToObject<bool>() == true;
             _hidden = payload.Properties.FirstOrDefault(p => p.Name == "hidden")?.Value.Value.ToObject<bool>() == true;
             Focusable = payload.Properties.FirstOrDefault(p => p.Name == "focusable")?.Value.Value.ToObject<bool>() == true;
         }

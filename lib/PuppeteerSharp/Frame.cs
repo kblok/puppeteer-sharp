@@ -38,7 +38,6 @@ namespace PuppeteerSharp
     /// </example>
     public class Frame
     {
-        private readonly CDPSession _client;
 
         internal List<WaitTask> WaitTasks { get; }
 
@@ -54,10 +53,9 @@ namespace PuppeteerSharp
 
         internal DOMWorld SecondaryWorld { get; }
 
-        internal Frame(FrameManager frameManager, CDPSession client, Frame parentFrame, string frameId)
+        internal Frame(FrameManager frameManager, Frame parentFrame, string frameId)
         {
             FrameManager = frameManager;
-            _client = client;
             ParentFrame = parentFrame;
             Id = frameId;
 

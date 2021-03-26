@@ -13,7 +13,6 @@ namespace PuppeteerSharp
         private readonly int? _pollingInterval;
         private readonly int _timeout;
         private readonly object[] _args;
-        private readonly string _title;
         private readonly Task _timeoutTimer;
 
         private readonly CancellationTokenSource _cts;
@@ -135,7 +134,6 @@ async function waitForPredicatePageFunction(predicateBody, polling, timeout, ...
             _pollingInterval = pollingInterval;
             _timeout = timeout;
             _args = args ?? Array.Empty<object>();
-            _title = title;
 
             _world.WaitTasks.Add(this);
 
