@@ -21,6 +21,7 @@
     <StyleCopTreatErrorsAsWarnings>false</StyleCopTreatErrorsAsWarnings>
     <CodeAnalysisRuleSet>../PuppeteerSharp.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
+  <Import Project="../Common/Dependencies.props" />
   <Import Project="../Common/SignAssembly.props" />
   <PropertyGroup>
     <DebugType>embedded</DebugType>
