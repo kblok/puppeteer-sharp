@@ -231,24 +231,31 @@ namespace PuppeteerSharp
 
             _interceptionHandled = true;
 
-            var responseHeaders = new Dictionary<string, string>();
+            var responseHeaders = new List<KeyValuePair<string, string>>();
 
             if (response.Headers != null)
             {
                 foreach (var keyValue in response.Headers)
                 {
-                    responseHeaders[keyValue.Key] = keyValue.Value.ToString();
+                    responseHeaders.Add(new KeyValuePair<string, string>(keyValue.Key, keyValue.Value.ToString()));
+                }
+            }
+            if (response.MultipleHeaders != null)
+            {
+                foreach (var keyValue in response.MultipleHeaders)
+                {
+                    responseHeaders.Add(new KeyValuePair<string, string>(keyValue.Key, keyValue.Value.ToString()));
                 }
             }
 
             if (response.ContentType != null)
             {
-                responseHeaders["content-type"] = response.ContentType;
+                responseHeaders.Add(new KeyValuePair<string, string>("content-type", response.ContentType));
             }
 
-            if (!responseHeaders.ContainsKey("content-length") && response.BodyData != null)
+            if (!ContainsKey(responseHeaders, "content-length") && response.BodyData != null)
             {
-                responseHeaders["content-length"] = response.BodyData.Length.ToString(CultureInfo.CurrentCulture);
+                responseHeaders.Add(new KeyValuePair<string, string>("content-length",  response.BodyData.Length.ToString(CultureInfo.CurrentCulture)));
             }
 
             try
@@ -314,5 +321,11 @@ namespace PuppeteerSharp
 
         private Header[] HeadersArray(Dictionary<string, string> headers)
             => headers?.Select(pair => new Header { Name = pair.Key, Value = pair.Value }).ToArray();
+
+        private Header[] HeadersArray(List<KeyValuePair<string, string>> headers)
+            => headers?.Select(pair => new Header { Name = pair.Key, Value = pair.Value }).ToArray();
+
+        private bool ContainsKey(List<KeyValuePair<string, string>> headers, string key)
+           => headers?.Where(item => item.Key == key).ToList().Count > 0 ? true : false;
     }
 }

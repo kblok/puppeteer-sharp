@@ -39,5 +39,10 @@ namespace PuppeteerSharp
         /// </summary>
         /// <value>Status Code.</value>
         public HttpStatusCode? Status { get; set; }
+        /// <summary>
+        /// Multiple Response headers with same Header name. Header values will be converted to a string.
+        /// </summary>
+        /// <value>Headers.</value>
+        public List<KeyValuePair<string, object>> MultipleHeaders { get; set; }
     }
 }
